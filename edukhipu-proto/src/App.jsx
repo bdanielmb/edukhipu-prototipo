@@ -1,9 +1,13 @@
 import { useState } from "react";
 import {
   ArrowRight, Download, CheckCircle2, Sparkles, ChevronLeft,
-  Clock, ShieldCheck, School, FileText
+  Clock, ShieldCheck, School, FileText, Mail, X, FileEdit
 } from "lucide-react";
-import { jsPDF } from "jspdf";
+import {
+  Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+  HeadingLevel, WidthType, ShadingType, BorderStyle
+} from "docx";
+import { saveAs } from "file-saver";
 
 function track(eventName, params = {}) {
   if (typeof window !== "undefined" && window.gtag) {
@@ -32,6 +36,256 @@ const COMPETENCIES = {
   "Educación Física": ["Se desenvuelve de manera autónoma a través de su motricidad", "Asume una vida saludable"],
   "Castellano como segunda lengua": ["Se comunica oralmente en castellano como segunda lengua", "Lee diversos tipos de texto en castellano como segunda lengua"],
 };
+
+async function generateSessionDocx(data) {
+  const gradeText = data.grade || "No especificado";
+  const areaText = data.area || "No especificada";
+  const competencyText = data.competency || "No especificada";
+  const topicText = data.topic || "Sin título de tema";
+
+  const tableBorder = {
+    top: { style: BorderStyle.SINGLE, size: 4, color: "D8D2C2" },
+    bottom: { style: BorderStyle.SINGLE, size: 4, color: "D8D2C2" },
+    left: { style: BorderStyle.SINGLE, size: 4, color: "D8D2C2" },
+    right: { style: BorderStyle.SINGLE, size: 4, color: "D8D2C2" },
+  };
+
+  const doc = new Document({
+    sections: [
+      {
+        properties: {},
+        children: [
+          new Paragraph({
+            heading: HeadingLevel.TITLE,
+            children: [
+              new TextRun({
+                text: "EDUKHIPU",
+                bold: true,
+                color: "14213D",
+                size: 32,
+                font: "Calibri",
+              }),
+            ],
+            space: { after: 80 },
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Sesión de Aprendizaje — Copiloto IA alineado al CNEB (Documento Editable)",
+                italic: true,
+                color: "96691F",
+                size: 20,
+                font: "Calibri",
+              }),
+            ],
+            space: { after: 300 },
+          }),
+
+          // Metadata Box
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: [
+              new TableRow({
+                children: [
+                  new TableCell({
+                    width: { size: 50, type: WidthType.PERCENTAGE },
+                    borders: tableBorder,
+                    shading: { fill: "F7F4EC", type: ShadingType.CLEAR },
+                    margins: { top: 120, bottom: 120, left: 160, right: 160 },
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({ text: "Grado: ", bold: true, color: "14213D" }),
+                          new TextRun({ text: gradeText, color: "2A3A5C" }),
+                        ],
+                      }),
+                      new Paragraph({
+                        children: [
+                          new TextRun({ text: "Área Curricular: ", bold: true, color: "14213D" }),
+                          new TextRun({ text: areaText, color: "2A3A5C" }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    width: { size: 50, type: WidthType.PERCENTAGE },
+                    borders: tableBorder,
+                    shading: { fill: "F7F4EC", type: ShadingType.CLEAR },
+                    margins: { top: 120, bottom: 120, left: 160, right: 160 },
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({ text: "Competencia CNEB: ", bold: true, color: "14213D" }),
+                          new TextRun({ text: competencyText, color: "2A3A5C" }),
+                        ],
+                      }),
+                      new Paragraph({
+                        children: [
+                          new TextRun({ text: "Tema de Clase: ", bold: true, color: "14213D" }),
+                          new TextRun({ text: topicText, color: "2A3A5C" }),
+                        ],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+            ],
+          }),
+
+          new Paragraph({ space: { after: 280 } }),
+
+          // Topic Heading
+          new Paragraph({
+            heading: HeadingLevel.HEADING_1,
+            children: [
+              new TextRun({
+                text: `SESIÓN: ${topicText.toUpperCase()}`,
+                bold: true,
+                color: "B4432E",
+                size: 28,
+                font: "Calibri",
+              }),
+            ],
+            space: { after: 200 },
+          }),
+
+          // Propósito
+          new Paragraph({
+            heading: HeadingLevel.HEADING_2,
+            children: [
+              new TextRun({
+                text: "1. PROPÓSITO DE APRENDIZAJE",
+                bold: true,
+                color: "96691F",
+                size: 24,
+                font: "Calibri",
+              }),
+            ],
+            space: { before: 180, after: 120 },
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Los estudiantes de ${gradeText} movilizarán capacidades para desarrollar la competencia "${competencyText}" a través de actividades centradas en "${topicText}". Se trabajará con situaciones significativas del contexto real, promoviendo el pensamiento crítico, la indagación y la resolución cooperativa de problemas.`,
+                size: 22,
+                font: "Calibri",
+              }),
+            ],
+            space: { after: 240 },
+          }),
+
+          // Secuencia Didáctica
+          new Paragraph({
+            heading: HeadingLevel.HEADING_2,
+            children: [
+              new TextRun({
+                text: "2. SECUENCIA DIDÁCTICA",
+                bold: true,
+                color: "96691F",
+                size: 24,
+                font: "Calibri",
+              }),
+            ],
+            space: { before: 180, after: 120 },
+          }),
+
+          new Paragraph({
+            children: [
+              new TextRun({ text: "• INICIO (15 minutos)", bold: true, color: "14213D", size: 22 }),
+            ],
+            space: { before: 80, after: 40 },
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `  - Saberes Previos: El docente abre la clase mediante preguntas problematizadoras vinculadas a "${topicText}".\n  - Conflicto Cognitivo: Se plantea un reto o dilema práctico del entorno cotidiano.\n  - Propósito y Criterios: Se presenta la meta de la sesión y las pautas con las que evaluará el aprendizaje.`,
+                size: 21,
+                font: "Calibri",
+              }),
+            ],
+            space: { after: 160 },
+          }),
+
+          new Paragraph({
+            children: [
+              new TextRun({ text: "• DESARROLLO (60 minutos)", bold: true, color: "14213D", size: 22 }),
+            ],
+            space: { before: 80, after: 40 },
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `  - Procesamiento de Información: En grupos de trabajo, los estudiantes indagan y sistematizan contenidos de "${topicText}".\n  - Aplicación Práctica: Desarrollan la actividad central movilizando la competencia "${competencyText}".\n  - Acompañamiento Formativo: El docente orienta a cada equipo resolviendo dudas y ajustando el nivel de andamiaje.`,
+                size: 21,
+                font: "Calibri",
+              }),
+            ],
+            space: { after: 160 },
+          }),
+
+          new Paragraph({
+            children: [
+              new TextRun({ text: "• CIERRE (15 minutos)", bold: true, color: "14213D", size: 22 }),
+            ],
+            space: { before: 80, after: 40 },
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `  - Metacognición Guiada: ¿Qué aprendimos hoy sobre "${topicText}"? ¿Qué dificultades tuvimos y cómo las superamos?\n  - Evaluación Formativa: Revisión y autoevaluación del producto o evidencia realizada durante la clase.`,
+                size: 21,
+                font: "Calibri",
+              }),
+            ],
+            space: { after: 240 },
+          }),
+
+          // Criterios de Evaluación
+          new Paragraph({
+            heading: HeadingLevel.HEADING_2,
+            children: [
+              new TextRun({
+                text: "3. CRITERIOS DE EVALUACIÓN Y EVIDENCIAS",
+                bold: true,
+                color: "96691F",
+                size: 24,
+                font: "Calibri",
+              }),
+            ],
+            space: { before: 180, after: 120 },
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `• Criterio 1: Demuestra comprensión de los conceptos de "${topicText}".\n• Criterio 2: Moviliza correctamente las capacidades de la competencia "${competencyText}".\n• Evidencia de Aprendizaje: Ficha de trabajo, organizador visual u objeto elaborado en clase.`,
+                size: 22,
+                font: "Calibri",
+              }),
+            ],
+            space: { after: 360 },
+          }),
+
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Documento generado por EDUKHIPU — Copiloto IA alineado al CNEB (Editable en Microsoft Word).",
+                italic: true,
+                color: "8A8474",
+                size: 18,
+                font: "Calibri",
+              }),
+            ],
+          }),
+        ],
+      },
+    ],
+  });
+
+  const blob = await Packer.toBlob(doc);
+  const cleanTopic = topicText.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]/g, "_").slice(0, 25);
+  const cleanGrade = gradeText.replace(/[°\s]/g, "");
+  saveAs(blob, `Sesion_${cleanGrade}_${cleanTopic}.docx`);
+}
 
 function KnotMark({ size = 28 }) {
   return (
@@ -84,29 +338,30 @@ function TopBar({ step, onBack }) {
   );
 }
 
+// Step 0: Landing
 function Landing({ onStart }) {
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "72px 24px 40px", textAlign: "center" }}>
+    <div style={{ maxWidth: 720, margin: "0 auto", padding: "64px 24px 40px", textAlign: "center" }}>
       <div style={{
         display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 14px",
         borderRadius: 999, border: "1px solid var(--line)", fontSize: 13, fontWeight: 700,
         color: "var(--gold-deep)", letterSpacing: "0.04em", marginBottom: 28, textTransform: "uppercase",
       }}>
-        <Sparkles size={14} /> Empieza hoy, gratis
+        <Sparkles size={14} /> Prueba instantánea · Sin registros
       </div>
 
       <h1 style={{ fontSize: "clamp(2.2rem, 5vw, 3.4rem)", lineHeight: 1.08, margin: "0 0 20px", color: "var(--ink)" }}>
         Tu planificación curricular,<br />
-        <span style={{ color: "var(--thread-red)" }}>tejida</span> en minutos.
+        <span style={{ color: "var(--thread-red)" }}>tejida</span> en Word editable.
       </h1>
 
-      <p style={{ fontSize: 18, color: "var(--ink-soft)", lineHeight: 1.6, maxWidth: 520, margin: "0 auto 36px" }}>
-        Genera sesiones de aprendizaje alineadas al CNEB, listas para
-        adaptar a tu aula. Sin plantillas genéricas, sin horas extra de burocracia.
+      <p style={{ fontSize: 18, color: "var(--ink-soft)", lineHeight: 1.6, maxWidth: 540, margin: "0 auto 36px" }}>
+        Genera sesiones de aprendizaje alineadas al CNEB del MINEDU, listas para
+        descargar directamente en <strong>Microsoft Word (.docx)</strong> y adaptar a tu aula.
       </p>
 
       <button
-        onClick={() => { track("account_created", { school_sector: "no_especificado", user_role: "docente" }); onStart(); }}
+        onClick={() => { track("landing_cta_clicked", { action: "start_free_session" }); onStart(); }}
         style={{
           background: "var(--thread-red)", color: "#fff", border: "none",
           padding: "16px 32px", borderRadius: 12, fontSize: 16, fontWeight: 700,
@@ -114,11 +369,11 @@ function Landing({ onStart }) {
           boxShadow: "0 8px 24px rgba(180, 67, 46, 0.28)",
         }}
       >
-        Generar mi primera sesión gratis <ArrowRight size={18} />
+        Crear mi primera sesión gratis <ArrowRight size={18} />
       </button>
 
       <p style={{ fontSize: 13, color: "var(--ink-soft)", opacity: 0.75, marginTop: 14 }}>
-        Sin tarjeta de crédito · Configura tu primera sesión en 5 minutos
+        Cero registros iniciales · Formato .docx 100% editable
       </p>
 
       <div style={{
@@ -126,9 +381,9 @@ function Landing({ onStart }) {
         textAlign: "left", borderTop: "1px solid var(--line)", paddingTop: 36,
       }}>
         {[
-          { icon: Clock, title: "3 horas/semana", text: "es lo que un docente peruano dedica solo a planificación, según MINEDU." },
-          { icon: ShieldCheck, title: "Alineado al CNEB", text: "cada sesión respeta competencias, capacidades y desempeños oficiales." },
-          { icon: School, title: "Hecho para el aula", text: "editable en menos de 5 minutos antes de imprimir o compartir." },
+          { icon: Clock, title: "Ahorra 3+ horas", text: "Genera la estructura curricular completa en menos de un minuto." },
+          { icon: ShieldCheck, title: "Alineado al CNEB", text: "Competencias, capacidades y criterios oficiales de MINEDU." },
+          { icon: FileEdit, title: "100% Editable", text: "Descarga en .docx para modificar en Microsoft Word libremente." },
         ].map(({ icon: Icon, title, text }, i) => (
           <div key={i}>
             <Icon size={20} color="var(--gold-deep)" style={{ marginBottom: 10 }} />
@@ -141,65 +396,21 @@ function Landing({ onStart }) {
   );
 }
 
-function Registro({ onNext }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [sector, setSector] = useState("Público");
-
-  const canSubmit = name.trim() && email.trim();
-
-  return (
-    <FormShell
-      eyebrow="Paso 1 de 3"
-      title="Creemos tu cuenta"
-      subtitle="Solo lo necesario para personalizar tu experiencia."
-    >
-      <Field label="Nombre completo">
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej. María Torres Quispe" style={inputStyle} />
-      </Field>
-      <Field label="Correo electrónico">
-        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tucorreo@colegio.edu.pe" type="email" style={inputStyle} />
-      </Field>
-      <Field label="Tipo de institución">
-        <div style={{ display: "flex", gap: 10 }}>
-          {["Público", "Privado"].map((s) => (
-            <button
-              key={s}
-              onClick={() => setSector(s)}
-              style={{
-                flex: 1, padding: "12px", borderRadius: 10,
-                border: sector === s ? "2px solid var(--thread-red)" : "1px solid var(--line)",
-                background: sector === s ? "rgba(180,67,46,0.06)" : "#fff",
-                color: "var(--ink)", fontWeight: 600, cursor: "pointer", fontSize: 14,
-              }}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      </Field>
-
-      <PrimaryButton
-        disabled={!canSubmit}
-        onClick={() => onNext({ name, email, sector })}
-        text="Continuar"
-      />
-    </FormShell>
-  );
-}
-
-function Seleccion({ onNext }) {
+// Step 1: Selección CNEB + Tema de la clase
+function SeleccionCneb({ onNext }) {
   const [grade, setGrade] = useState("");
   const [area, setArea] = useState("");
   const [competency, setCompetency] = useState("");
+  const [topic, setTopic] = useState("");
 
   const competencies = area ? COMPETENCIES[area] : [];
+  const canSubmit = grade && area && competency && topic.trim().length >= 3;
 
   return (
     <FormShell
-      eyebrow="Paso 2 de 3"
-      title="Configura tu sesión"
-      subtitle="Elige el grado, área y competencia del CNEB que vas a trabajar."
+      eyebrow="Paso 1 de 2"
+      title="Configura tu sesión de aprendizaje"
+      subtitle="Elige grado, área, competencia del CNEB e ingresa el tema de la clase."
     >
       <Field label="Grado">
         <select value={grade} onChange={(e) => setGrade(e.target.value)} style={inputStyle}>
@@ -222,22 +433,32 @@ function Seleccion({ onNext }) {
         </select>
       </Field>
 
+      <Field label="Tema de la clase">
+        <input
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          placeholder="Ej. La fotosíntesis y el ecosistema, Ecuaciones de 1er grado"
+          style={inputStyle}
+        />
+      </Field>
+
       <PrimaryButton
-        disabled={!grade || !area || !competency}
+        disabled={!canSubmit}
         onClick={() => {
-          track("ai_prompt_submitted", { cneb_competency_selected: competency, educational_grade: grade });
-          onNext({ grade, area, competency });
+          track("cneb_form_submitted", { cneb_competency: competency, grade, area, topic });
+          onNext({ grade, area, competency, topic });
         }}
-        text="Generar sesión con IA"
+        text="Generar sesión en Word (.docx)"
         icon={Sparkles}
       />
     </FormShell>
   );
 }
 
+// Transición Animada
 function Generando({ onDone }) {
   useState(() => {
-    const t = setTimeout(onDone, 2200);
+    const t = setTimeout(onDone, 2000);
     return () => clearTimeout(t);
   });
 
@@ -251,142 +472,159 @@ function Generando({ onDone }) {
         border: "3px solid var(--paper-dim)", borderTopColor: "var(--thread-red)",
         animation: "spin 0.9s linear infinite", marginBottom: 28,
       }} />
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      <h2 style={{ fontSize: 22, marginBottom: 8 }}>Tejiendo tu sesión...</h2>
+      <h2 style={{ fontSize: 22, marginBottom: 8 }}>Tejiendo tu sesión pedagógica...</h2>
       <p style={{ color: "var(--ink-soft)", fontSize: 15 }}>
-        Alineando competencias, capacidades y desempeños del CNEB.
+        Alineando competencias, capacidades, secuencias didácticas y criterios CNEB.
       </p>
     </div>
   );
 }
 
-// ---------------------------------------------------------
-// Generador de PDF real usando jsPDF (sin backend, sin IA)
-// ---------------------------------------------------------
-function generateSessionPDF(data) {
-  const doc = new jsPDF({ unit: "pt", format: "a4" });
-  const marginX = 56;
-  let y = 64;
+// Modal de Captura de Lead (Email)
+function EmailLeadModal({ isOpen, onClose, onConfirm, topic }) {
+  const [email, setEmail] = useState("");
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  doc.setTextColor(20, 33, 61);
-  doc.text("EDUKHIPU", marginX, y);
+  if (!isOpen) return null;
 
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(120, 120, 120);
-  doc.text("Sesión de aprendizaje generada — Copiloto IA para Docentes", marginX, y + 16);
-
-  y += 44;
-  doc.setDrawColor(200, 200, 200);
-  doc.line(marginX, y, 539, y);
-  y += 32;
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(15);
-  doc.setTextColor(20, 33, 61);
-  const titleLines = doc.splitTextToSize(data.competency || "Competencia CNEB", 480);
-  doc.text(titleLines, marginX, y);
-  y += titleLines.length * 20 + 8;
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  doc.setTextColor(90, 90, 90);
-  doc.text(`${data.grade || ""}  ·  ${data.area || ""}`, marginX, y);
-  y += 30;
-
-  const section = (label, text) => {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.setTextColor(150, 105, 31);
-    doc.text(label, marginX, y);
-    y += 16;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(11);
-    doc.setTextColor(40, 40, 40);
-    const lines = doc.splitTextToSize(text, 480);
-    doc.text(lines, marginX, y);
-    y += lines.length * 15 + 22;
-  };
-
-  section(
-    "PROPÓSITO DE APRENDIZAJE",
-    `Los estudiantes de ${data.grade || "el grado seleccionado"} desarrollarán la competencia "${data.competency || ""}" dentro del área de ${data.area || ""}, movilizando sus capacidades para resolver una situación significativa vinculada a su contexto real.`
-  );
-
-  section(
-    "INICIO (10 min)",
-    "Se activan los saberes previos mediante una pregunta generadora relacionada con la situación de aprendizaje. Se comunica el propósito de la sesión y los criterios de evaluación."
-  );
-
-  section(
-    "DESARROLLO (40 min)",
-    "Los estudiantes trabajan en equipos aplicando estrategias específicas de la competencia trabajada. El docente monitorea y retroalimenta de forma oportuna, ajustando el nivel de andamiaje según el progreso observado."
-  );
-
-  section(
-    "CIERRE (10 min)",
-    "Se realiza una metacognición guiada: ¿qué aprendimos?, ¿cómo lo aprendimos?, ¿para qué nos sirve? Los estudiantes autoevalúan su desempeño usando la lista de cotejo entregada."
-  );
-
-  section(
-    "CRITERIOS DE EVALUACIÓN",
-    "Evidencia el desempeño esperado según los estándares de aprendizaje del CNEB para el ciclo correspondiente, con énfasis en la aplicación práctica de la competencia trabajada."
-  );
-
-  doc.setDrawColor(220, 220, 220);
-  doc.line(marginX, 760, 539, 760);
-  doc.setFontSize(9);
-  doc.setTextColor(150, 150, 150);
-  doc.text("Generado con EDUKHIPU — Documento de ejemplo para fines de prototipo (no generado por IA real).", marginX, 774);
-
-  const fileName = `Sesion_${(data.grade || "").replace(/[°\s]/g, "")}_${(data.area || "").replace(/\s/g, "")}.pdf`;
-  doc.save(fileName);
-}
-
-function Resultado({ data, onRestart }) {
-  const [downloaded, setDownloaded] = useState(false);
-
-  const handleDownload = () => {
-    track("session_downloaded", { file_format: "pdf", processing_time_seconds: 8 });
-    generateSessionPDF(data);
-    setDownloaded(true);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (email.trim()) {
+      track("lead_email_captured", { email });
+      onConfirm(email);
+    }
   };
 
   return (
-    <div style={{ maxWidth: 640, margin: "0 auto", padding: "56px 24px" }}>
+    <div className="modal-backdrop">
+      <div className="modal-card">
+        <button
+          onClick={onClose}
+          style={{
+            position: "absolute", top: 16, right: 16, background: "none", border: "none",
+            cursor: "pointer", color: "var(--ink-soft)",
+          }}
+        >
+          <X size={20} />
+        </button>
+
+        <div style={{
+          width: 48, height: 48, borderRadius: 12, background: "rgba(180, 67, 46, 0.1)",
+          display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16,
+          color: "var(--thread-red)",
+        }}>
+          <Mail size={24} />
+        </div>
+
+        <h2 style={{ fontSize: 22, margin: "0 0 8px" }}>¿A dónde enviamos tus próximas sesiones?</h2>
+        <p style={{ fontSize: 14, color: "var(--ink-soft)", lineHeight: 1.5, marginBottom: 20 }}>
+          Ingresa tu correo para descargar el archivo <strong>.docx</strong> de <em>"{topic}"</em> y guardar tu progreso.
+        </p>
+
+        <form onSubmit={handleSubmit}>
+          <Field label="Correo electrónico">
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="docente@colegio.edu.pe"
+              style={inputStyle}
+              autoFocus
+            />
+          </Field>
+
+          <PrimaryButton
+            text="Descargar Word Editable (.docx)"
+            icon={Download}
+            disabled={!email.trim()}
+          />
+        </form>
+
+        <p style={{ fontSize: 12, color: "var(--ink-soft)", opacity: 0.7, textAlign: "center", marginTop: 12 }}>
+          Sin spam. Solo plantillas y sesiones CNEB editables.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Step 2: Resultado / Previsualización y Descarga .docx
+function Resultado({ data, onRestart }) {
+  const [downloaded, setDownloaded] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleOpenModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmLeadAndDownload = async (email) => {
+    setIsModalOpen(false);
+    await generateSessionDocx(data);
+    setDownloaded(true);
+    track("docx_downloaded", { topic: data.topic, grade: data.grade, area: data.area });
+  };
+
+  return (
+    <div style={{ maxWidth: 680, margin: "0 auto", padding: "48px 24px" }}>
       <div style={{
         display: "inline-flex", alignItems: "center", gap: 8, color: "var(--success)",
-        fontWeight: 700, fontSize: 14, marginBottom: 20,
+        fontWeight: 700, fontSize: 14, marginBottom: 16,
       }}>
         <CheckCircle2 size={18} /> Sesión generada con éxito
       </div>
 
-      <h1 style={{ fontSize: 30, marginBottom: 8 }}>
-        {data.competency}
+      <h1 style={{ fontSize: 32, marginBottom: 8 }}>
+        {data.topic}
       </h1>
-      <p style={{ color: "var(--ink-soft)", marginBottom: 32 }}>
-        {data.grade} · {data.area}
+      <p style={{ color: "var(--ink-soft)", fontSize: 16, marginBottom: 28 }}>
+        {data.grade} · {data.area} · <em>{data.competency}</em>
       </p>
 
+      {/* Previsualización Estructurada */}
       <div style={{
         border: "1px solid var(--line)", borderRadius: 16, padding: 28,
-        background: "#fff", marginBottom: 28,
+        background: "#fff", marginBottom: 28, boxShadow: "0 4px 16px rgba(20,33,61,0.04)",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
-          <FileText size={20} color="var(--gold-deep)" />
-          <span style={{ fontWeight: 700 }}>Sesión_{(data.grade || "").replace(/[°\s]/g, "")}_{(data.area || "").replace(/\s/g, "")}.pdf</span>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, pb: 12, borderBottom: "1px solid var(--line)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <FileText size={22} color="var(--gold-deep)" />
+            <span style={{ fontWeight: 700, fontSize: 15 }}>
+              Sesión_{(data.grade || "").replace(/[°\s]/g, "")}_{(data.topic || "Clase").replace(/\s/g, "_").slice(0, 15)}.docx
+            </span>
+          </div>
+          <span style={{ fontSize: 12, fontWeight: 700, background: "rgba(192, 138, 46, 0.15)", color: "var(--gold-deep)", padding: "4px 10px", borderRadius: 6 }}>
+            Word Editable
+          </span>
         </div>
-        <div style={{ fontSize: 14, color: "var(--ink-soft)", lineHeight: 1.7 }}>
-          Incluye: propósito de aprendizaje, secuencia didáctica (inicio, desarrollo, cierre),
-          criterios de evaluación y evidencias sugeridas — alineado a la competencia
-          <strong> {data.competency}</strong>.
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 16, fontSize: 14, color: "var(--ink)" }}>
+          <div>
+            <strong style={{ color: "var(--gold-deep)", display: "block", marginBottom: 4 }}>1. Propósito de Aprendizaje:</strong>
+            <p style={{ margin: 0, color: "var(--ink-soft)", lineHeight: 1.5 }}>
+              Los estudiantes movilizarán la competencia "{data.competency}" abordando el tema de "{data.topic}".
+            </p>
+          </div>
+
+          <div>
+            <strong style={{ color: "var(--gold-deep)", display: "block", marginBottom: 4 }}>2. Secuencia Didáctica:</strong>
+            <ul style={{ margin: 0, paddingLeft: 20, color: "var(--ink-soft)", lineHeight: 1.6 }}>
+              <li><strong>Inicio (15m):</strong> Saberes previos sobre {data.topic}, conflicto cognitivo y propósito.</li>
+              <li><strong>Desarrollo (60m):</strong> Trabajo cooperativo e investigación práctica de la competencia.</li>
+              <li><strong>Cierre (15m):</strong> Metacognición guiada y autoevaluación formativa.</li>
+            </ul>
+          </div>
+
+          <div>
+            <strong style={{ color: "var(--gold-deep)", display: "block", marginBottom: 4 }}>3. Criterios de Evaluación:</strong>
+            <p style={{ margin: 0, color: "var(--ink-soft)", lineHeight: 1.5 }}>
+              Evidencia clara de logro según los estándares CNEB para {data.grade}.
+            </p>
+          </div>
         </div>
       </div>
 
       {!downloaded ? (
-        <PrimaryButton onClick={handleDownload} text="Descargar sesión (PDF)" icon={Download} />
+        <PrimaryButton onClick={handleOpenModal} text="Descargar Sesión (.docx)" icon={Download} />
       ) : (
         <>
           <div style={{
@@ -394,10 +632,10 @@ function Resultado({ data, onRestart }) {
             background: "rgba(76, 122, 94, 0.1)", borderRadius: 12, color: "var(--success)",
             fontWeight: 700, fontSize: 15, marginBottom: 14,
           }}>
-            <CheckCircle2 size={20} /> Descarga completada — session_downloaded registrado
+            <CheckCircle2 size={20} /> Archivo .docx generado y descargado correctamente
           </div>
           <button
-            onClick={handleDownload}
+            onClick={() => generateSessionDocx(data)}
             style={{
               width: "100%", padding: "13px 20px", borderRadius: 12,
               border: "1px solid var(--line)", background: "#fff",
@@ -405,7 +643,7 @@ function Resultado({ data, onRestart }) {
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
             }}
           >
-            Descargar de nuevo <Download size={15} />
+            Descargar de nuevo (.docx) <Download size={15} />
           </button>
         </>
       )}
@@ -413,25 +651,33 @@ function Resultado({ data, onRestart }) {
       <button
         onClick={onRestart}
         style={{
-          display: "block", margin: "18px auto 0", background: "none", border: "none",
+          display: "block", margin: "20px auto 0", background: "none", border: "none",
           color: "var(--ink-soft)", fontSize: 14, cursor: "pointer", fontWeight: 600,
           textDecoration: "underline",
         }}
       >
-        Generar otra sesión
+        Crear otra sesión
       </button>
+
+      {/* Modal Lead Capture */}
+      <EmailLeadModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={handleConfirmLeadAndDownload}
+        topic={data.topic}
+      />
     </div>
   );
 }
 
 function FormShell({ eyebrow, title, subtitle, children }) {
   return (
-    <div style={{ maxWidth: 460, margin: "0 auto", padding: "56px 24px" }}>
+    <div style={{ maxWidth: 480, margin: "0 auto", padding: "48px 24px" }}>
       <div style={{ fontSize: 12.5, fontWeight: 800, color: "var(--gold-deep)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10 }}>
         {eyebrow}
       </div>
       <h1 style={{ fontSize: 28, marginBottom: 8 }}>{title}</h1>
-      <p style={{ color: "var(--ink-soft)", fontSize: 15, marginBottom: 32 }}>{subtitle}</p>
+      <p style={{ color: "var(--ink-soft)", fontSize: 15, marginBottom: 28 }}>{subtitle}</p>
       {children}
     </div>
   );
@@ -477,12 +723,16 @@ export default function App() {
   const [step, setStep] = useState(0);
   const [sessionData, setSessionData] = useState({});
 
+  const handleRestart = () => {
+    setSessionData({});
+    setStep(0);
+  };
+
   const steps = [
     <Landing onStart={() => setStep(1)} />,
-    <Registro onNext={() => { setStep(2); }} />,
-    <Seleccion onNext={(d) => { setSessionData(d); setStep(3); }} />,
-    <Generando onDone={() => setStep(4)} />,
-    <Resultado data={sessionData} onRestart={() => setStep(0)} />,
+    <SeleccionCneb onNext={(data) => { setSessionData(data); setStep(2); }} />,
+    <Generando onDone={() => setStep(3)} />,
+    <Resultado data={sessionData} onRestart={handleRestart} />,
   ];
 
   return (
